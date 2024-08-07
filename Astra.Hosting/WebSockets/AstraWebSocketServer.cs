@@ -20,7 +20,7 @@ using System.Buffers;
 
 namespace Astra.Hosting.WebSockets
 {
-    public abstract class AstraWebSocketServer : IWebSocketServer
+    public abstract class AstraWebSocketServer : IWebSocketServer, IStartStopObject
     {
         private bool _initialized;
         private HttpListener _httpListener;

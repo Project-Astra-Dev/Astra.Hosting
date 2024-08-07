@@ -16,4 +16,8 @@
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Astra.Hosting\Astra.DependencyInjection\Openlabs.DependencyInjection\Astra.DependencyInjection.csproj" />
+  </ItemGroup>
+
 </Project>

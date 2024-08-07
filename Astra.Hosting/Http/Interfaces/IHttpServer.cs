@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Astra.Hosting.Http.Interfaces
 {
-    public interface IHttpServer
+    public interface IHttpServer : IStartStopObject
     {
         void Start();
         void Stop();

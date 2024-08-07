@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Astra.Hosting.Http
 {
-    public abstract class AstraHttpServer : IHttpServer
+    public abstract class AstraHttpServer : IHttpServer, IStartStopObject
     {
         private bool _initialized;
         private HttpListener _httpListener;

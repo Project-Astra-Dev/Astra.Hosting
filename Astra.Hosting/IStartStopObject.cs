@@ -4,14 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Astra.Hosting.WebSockets.Interfaces
+namespace Astra.Hosting
 {
-    public interface IWebSocketServer : IStartStopObject
+    public interface IStartStopObject
     {
         void Start();
         void Stop();
-
-        string Hostname { get; }
-        ushort Port { get; }
     }
 }
