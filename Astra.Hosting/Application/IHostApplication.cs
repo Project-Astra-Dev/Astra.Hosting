@@ -11,7 +11,7 @@ namespace Astra.Hosting.Application
     public interface IHostApplication
     {
         IHostApplication ConfigureServices(Action<IServiceBuilder> onConfigureServicesAction);
-        IHostApplication AddServer<TServer>() where TServer : class, IStartStopObject;
+        IHostApplication AddServer<TInterface, TServer>() where TServer : class, IStartStopObject;
         Task RunAsync();
     }
 }

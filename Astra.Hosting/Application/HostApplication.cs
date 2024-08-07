@@ -27,7 +27,7 @@ namespace Astra.Hosting.Application
             return this;
         }
 
-        public IHostApplication AddServer<TServer, TInterface>() where TServer : class, IStartStopObject
+        public IHostApplication AddServer<TInterface, TServer>() where TServer : class, IStartStopObject
         {
             _serviceHost.AddDependencies(options => options.AddSingleton<TServer, TInterface>());
             return this;
