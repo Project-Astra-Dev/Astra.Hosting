@@ -1,0 +1,3 @@
+[submodule "Astra.DependencyInjection"]
+	path = Astra.DependencyInjection
+	url = https://github.com/Project-Astra-Dev/Astra.DependencyInjection.git
