@@ -20,4 +20,9 @@
     <ProjectReference Include="..\..\..\Astra.Hosting\Astra.DependencyInjection\Openlabs.DependencyInjection\Astra.DependencyInjection.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Http\Controllers\Interfaces\" />
+    <Folder Include="Http\Controllers\Attributes\" />
+  </ItemGroup>
+
 </Project>
