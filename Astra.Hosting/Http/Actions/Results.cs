@@ -41,5 +41,7 @@ namespace Astra.Hosting.Http.Actions
         public static IHttpActionResult ServiceUnavailable(object content = null) => new HttpServiceUnavailableActionResult(content);
         public static IHttpActionResult GatewayTimeout(object content = null) => new HttpGatewayTimeoutActionResult(content);
         public static IHttpActionResult HttpVersionNotSupported(object content = null) => new HttpHttpVersionNotSupportedActionResult(content);
+
+        public static IHttpActionResult HtmlDocument(HttpStatusCode statusCode, string htmlContent) => new HtmlDocumentActionResult(statusCode, htmlContent);
     }
 }

@@ -10,19 +10,19 @@ namespace Astra.Hosting
     public static class ModuleInitialization
     {
         const string CONSOLE_OUTPUT_TEMPLATE =
-            "[{Timestamp:HH:mm:ss}] [{ProcessId}/{ThreadId}] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+            "[{Timestamp:HH:mm:ss}] [{Bucket} - {ProcessId}/{ThreadId}] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
         const string FILE_OUTPUT_TEMPLATE =
-            "[{Timestamp:MM/dd/yy HH:mm:ss}] [{ProcessId}/{ThreadId}] [{SourceFile}({Method}:{LineNumber})] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+            "[{Timestamp:MM/dd/yy HH:mm:ss}] [{Bucket} - {ProcessId}/{ThreadId}] [{SourceFile}({Method}:{LineNumber})] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
 
         public static void Initialize()
         {
-            if (!IsElevated())
-            {
-                RestartWithElevatedPrivileges();
-                return;
-            }
+            TryRestartWithElevatedPrivileges();
+            Log.Logger = InitializeLogger("Main");
+        }
 
-            Log.Logger = new LoggerConfiguration()
+        internal static ILogger InitializeLogger(string name)
+        {
+            return new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
@@ -30,32 +30,34 @@ namespace Astra.Hosting
                     includeFileInfo: true,
                     assemblyPrefix: "Astra.",
                     filePathDepth: 1)
+                .Enrich.WithProperty("Bucket", name, false)
                 .WriteTo.Console(outputTemplate: CONSOLE_OUTPUT_TEMPLATE)
                 .WriteTo.File("logs/log-.txt",
                               rollingInterval: RollingInterval.Day,
                               outputTemplate: FILE_OUTPUT_TEMPLATE)
                 .CreateLogger();
-
-            Log.Information("Serilog initialization completed.");
         }
 
-        private static bool IsElevated()
+        public static bool IsElevated()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
                 var principal = new System.Security.Principal.WindowsPrincipal(identity);
+
                 return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return geteuid() == 0;
-            }
+                return GetEffectiveUserId() == 0;
+
             return false;
         }
 
-        private static void RestartWithElevatedPrivileges()
+        public static void TryRestartWithElevatedPrivileges()
         {
+            if (IsElevated())
+                return;
+
             try
             {
                 string exePath = Process.GetCurrentProcess().MainModule?.FileName
@@ -86,7 +88,7 @@ namespace Astra.Hosting
             }
         }
 
-        [DllImport("libc")]
-        private static extern uint geteuid();
+        [DllImport("libc", EntryPoint = "geteuid")]
+        private static extern uint GetEffectiveUserId();
     }
 }

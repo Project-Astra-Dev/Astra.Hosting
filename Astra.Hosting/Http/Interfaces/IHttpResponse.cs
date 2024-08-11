@@ -9,7 +9,7 @@ namespace Astra.Hosting.Http.Interfaces
 {
     public interface IHttpResponseInternal
     {
-        void ApplyToHttpListenerResponse();
+        void ApplyToHttpListenerResponse(IHttpActionResult httpActionResult);
     }
 
     public interface IHttpResponse : IHttpResponseInternal

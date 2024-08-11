@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Astra.Hosting.Http.Actions;
 using System.Security.Cryptography;
 using System.Buffers;
+using Serilog.Core;
 
 namespace Astra.Hosting.WebSockets
 {
@@ -27,8 +28,13 @@ namespace Astra.Hosting.WebSockets
         private readonly List<AstraWebSocketRoute> _routes;
         private Task _listenTask = null!;
 
+        private readonly ILogger _logger;
+        public ILogger Logger => _logger;
+
         public AstraWebSocketServer(string hostname, ushort port)
         {
+            _logger = ModuleInitialization.InitializeLogger(GetType().Name);
+
             Hostname = hostname;
             Port = port;
             _routes = new List<AstraWebSocketRoute>();
@@ -65,9 +71,9 @@ namespace Astra.Hosting.WebSockets
             {
                 _httpListener.Start();
                 _listenTask = Task.Factory.StartNew(ListenImpl, TaskCreationOptions.LongRunning);
-                Log.Information("[{Name}] Started socket server on '{Host}:{Port}'", GetType().GetSafeName(), Hostname, Port);
+                _logger.Information("Started socket server on '{Host}:{Port}'", Hostname, Port);
             }
-            else Log.Warning("Cannot start socket server when it is already listening!");
+            else _logger.Warning("Cannot start socket server when it is already listening!");
         }
 
         private async Task ListenImpl()
@@ -81,18 +87,26 @@ namespace Astra.Hosting.WebSockets
                     if (rawHttpContext.Request.IsWebSocketRequest)
                     {
                         var route = FindMatchingRoute(rawHttpContext.Request.Url!.AbsolutePath);
+                        if (route == null)
+                        {
+                            _logger.Error("The route was not found when connecting via WebSocket");
+                            rawHttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                            rawHttpContext.Response.Close();
+                        }
 
                         var rawWebSocketContext = await rawHttpContext.AcceptWebSocketAsync(null);
                         if (rawWebSocketContext == null)
                         {
+                            _logger.Error("The WebSocket context was not found.");
                             rawHttpContext.Response.StatusCode = (int)HttpStatusCode.FailedDependency;
                             rawHttpContext.Response.Close();
                             return;
                         }
 
-                        var result = route!.MethodInfo.Invoke(this, new object[0]);
+                        var result = route.MethodInfo.Invoke(this, new object[0]);
                         if (result == null || result is not IWebSocketStateMachine)
                         {
+                            _logger.Error("The method '{MethodName}' did not return a '{TypeName}'.", route.EndpointName, nameof(IWebSocketStateMachine));
                             rawHttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
                             rawHttpContext.Response.Close();
                             return;
@@ -103,6 +117,7 @@ namespace Astra.Hosting.WebSockets
                         {
                             if (!await processor.Validate(webSocketClient))
                             {
+                                _logger.Error("The processor '{ProcessorName}' did not validate the request.", route.EndpointName);
                                 rawHttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                                 rawHttpContext.Response.Close();
                                 return;
@@ -115,7 +130,7 @@ namespace Astra.Hosting.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Error processing request: {Message}", ex.Message);
+                    _logger.Error("Error processing request: {Message}", ex.Message);
                 }
 
                 await Task.Delay(1);
@@ -149,7 +164,7 @@ namespace Astra.Hosting.WebSockets
 
                         if (totalBytesReceived >= MAX_BUFFER)
                         {
-                            Log.Warning("Message exceeds maximum buffer size and may be truncated.");
+                            _logger.Warning("Message exceeds maximum buffer size and may be truncated.");
                             break;
                         }
                     }
@@ -162,7 +177,7 @@ namespace Astra.Hosting.WebSockets
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Failed to invoke state / read buffer: {Message}", ex.Message);
+                    _logger.Error("Failed to invoke state / read buffer: {Message}", ex.Message);
                 }
                 finally
                 {
@@ -183,9 +198,9 @@ namespace Astra.Hosting.WebSockets
             {
                 _httpListener.Stop();
                 _listenTask = null!;
-                Log.Information("[{Name}] Stopped socket server", GetType().GetSafeName());
+                _logger.Information("Stopped socket server");
             }
-            else Log.Warning("Cannot stop socket server when it is not listening!");
+            else _logger.Warning("Cannot stop socket server when it is not listening!");
         }
 
 

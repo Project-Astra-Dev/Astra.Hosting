@@ -1,4 +1,5 @@
-﻿using Astra.Hosting.Http.Interfaces;
+﻿using Astra.Hosting.Http.Controllers.Interfaces;
+using Astra.Hosting.Http.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,8 @@ namespace Astra.Hosting.Http
         public string EndpointName { get; internal set; } = "Unknown";
         public string RouteUri { get; internal set; } = "/";
         public IReadOnlyList<IHttpEndpointProcessor> Processors { get; internal set; } = new List<IHttpEndpointProcessor>();
-        public MethodInfo MethodInfo { get; internal set; }
+        public MethodInfo MethodInfo { get; internal set; } = null!;
+        public IHttpController? ControllerInstance { get; internal set; } = null;
 
         public async Task<bool> Validate(IHttpContext httpContext)
         {

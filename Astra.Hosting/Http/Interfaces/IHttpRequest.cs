@@ -22,6 +22,8 @@ namespace Astra.Hosting.Http.Interfaces
         Dictionary<string, string> Queries { get; }
 
         byte[] Body { get; }
+        Dictionary<string, object> JsonBody { get; }
+        Dictionary<string, string> FormBody { get; }
 
         IPAddress Remote { get; }
         IPAddress Origin { get; }

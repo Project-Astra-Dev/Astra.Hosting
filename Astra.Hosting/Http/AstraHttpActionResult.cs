@@ -8,6 +8,14 @@ namespace Astra.Hosting.Http
 {
     public abstract class AstraHttpActionResult<TBodyObject> : IHttpActionResult
     {
+        static readonly JsonSerializerOptions _defaultJsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = null,
+            IncludeFields = false,
+            IgnoreReadOnlyFields = true,
+            DictionaryKeyPolicy = null
+        };
+
         protected TBodyObject? BodyObject { get; }
         protected AstraHttpActionResult(TBodyObject? bodyObject = default)
         {
@@ -19,10 +27,10 @@ namespace Astra.Hosting.Http
         {
             get
             {
-                if (BodyObject == null)
-                    return "application/octet-stream";
-                if (BodyObject.GetType().IsPrimitive())
+                if (BodyObject == null || BodyObject.GetType().IsPrimitive())
                     return "text/plain";
+                if (BodyObject is byte[])
+                    return "application/octet-stream";
                 return "application/json";
             }
         }
@@ -32,6 +40,7 @@ namespace Astra.Hosting.Http
         {
             if (BodyObject == null)
                 return Array.Empty<byte>();
+            if (BodyObject is byte[] array) return array;
 
             if (BodyObject.GetType().IsPrimitive())
                 return Encoding.UTF8.GetBytes(BodyObject.ToString() ?? "null");
@@ -40,13 +49,7 @@ namespace Astra.Hosting.Http
 
         protected virtual JsonSerializerOptions GetSerializerOptions()
         {
-            return new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                IgnoreReadOnlyFields = true,
-                DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
-            };
+            return _defaultJsonOptions;
         }
     }
 }

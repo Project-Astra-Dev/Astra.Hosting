@@ -106,10 +106,15 @@ namespace Astra.Hosting.Http
 
         public void SetCacheControl(int maxAgeSeconds) => SetHeader("Cache-Control", $"max-age={maxAgeSeconds}, public");
 
-        public void ApplyToHttpListenerResponse()
+        public void ApplyToHttpListenerResponse(IHttpActionResult httpActionResult)
         {
+            if (httpActionResult == null) return;
             foreach (var header in Headers)
                 _response.Headers[header.Key] = header.Value;
+
+            _response.StatusCode = (int)httpActionResult.StatusCode;
+            Content = httpActionResult.Body;
+            _response.ContentType = httpActionResult.ContentType;
 
             if (_content != null)
             {

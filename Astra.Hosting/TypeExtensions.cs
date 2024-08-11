@@ -83,5 +83,20 @@ namespace Astra.Hosting
                 .Where(method => method.GetCustomAttributes(typeof(TAttribute), true).Any())
                 .ToList();
         }
+
+        public static List<Type> GetAllNestedTypesWithAttribute<TAttribute>(this Type type) where TAttribute : Attribute
+        {
+            return type.GetNestedTypes()
+                .Where(method => method.GetCustomAttributes(typeof(TAttribute), true).Any())
+                .ToList();
+        }
+
+        public static List<Type> GetAllTypesWithAttribute<TAttribute>(this Assembly assembly) where TAttribute : Attribute
+        {
+            return assembly.GetTypes()
+                .SelectMany(t => new[] { t }.Concat(t.GetNestedTypes()))
+                .Where(method => method.GetCustomAttributes(typeof(TAttribute), true).Any())
+                .ToList();
+        }
     }
 }
