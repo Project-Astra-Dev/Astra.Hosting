@@ -95,7 +95,17 @@ namespace Astra.Hosting.Http
             }
         }
 
-        public IPAddress Remote => _request.RemoteEndPoint.Address;
+        public IPAddress Remote
+        {
+            get
+            {
+                if (Headers.ContainsKey("Cf-Connecting-Ip")) return IPAddress.Parse(Headers["Cf-Connecting-Ip"]);
+                if (Headers.ContainsKey("X-Real-Ip")) return IPAddress.Parse(Headers["X-Real-Ip"]);
+
+                return _request.RemoteEndPoint.Address;
+            }
+        }
+
         public IPAddress Origin => _request.LocalEndPoint.Address;
     }
 }
