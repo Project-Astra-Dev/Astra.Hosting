@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Astra.Hosting.Http.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
@@ -30,5 +31,7 @@ namespace Astra.Hosting.WebSockets.Interfaces
         string Route { get; }
         Dictionary<string, string> Queries { get; }
         Dictionary<string, string> Headers { get; }
+
+        IHttpRequest Request { get; }
     }
 }

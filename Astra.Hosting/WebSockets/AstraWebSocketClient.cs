@@ -1,4 +1,6 @@
-﻿using Astra.Hosting.WebSockets.Interfaces;
+﻿using Astra.Hosting.Http;
+using Astra.Hosting.Http.Interfaces;
+using Astra.Hosting.WebSockets.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +17,12 @@ namespace Astra.Hosting.WebSockets
     {
         private readonly HttpListenerContext _httpListenerContext;
         private readonly HttpListenerWebSocketContext _webSocketContext;
+        private readonly IHttpRequest _httpRequest;
         public AstraWebSocketClient(HttpListenerContext httpListenerContext, HttpListenerWebSocketContext webSocketContext, [Optional] string? clientId)
         {
             _httpListenerContext = httpListenerContext;
             _webSocketContext = webSocketContext;
+            _httpRequest = AstraHttpRequest.New(_httpListenerContext.Request);
 
             _clientId = clientId;
         }
@@ -79,5 +83,6 @@ namespace Astra.Hosting.WebSockets
         public string Route => _httpListenerContext.Request.Url!.AbsolutePath;
         public Dictionary<string, string> Headers => _httpListenerContext.Request.Headers.AllKeys.ToDictionary(k => k!, k => _httpListenerContext.Request.Headers[k])!;
         public Dictionary<string, string> Queries => _httpListenerContext.Request.QueryString.AllKeys.ToDictionary(k => k!, k => _httpListenerContext.Request.QueryString[k])!;
+        public IHttpRequest Request => _httpRequest;
     }
 }
