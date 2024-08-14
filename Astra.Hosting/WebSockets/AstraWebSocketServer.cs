@@ -144,48 +144,55 @@ namespace Astra.Hosting.WebSockets
 
         private async Task SocketImpl(IWebSocketClient webSocketClient, AstraWebSocketStateMachine webSocketStateMachine)
         {
-            const int MAX_BUFFER = 1024 * 8 * 4 * 2;
-            webSocketStateMachine.InvokeOnOpen(webSocketClient);
-
-            while (webSocketClient.IsConnected)
+            try
             {
-                byte[]? rawMessageBuffer = null;
-                try
+                const int MAX_BUFFER = 1024 * 8 * 4 * 2;
+                webSocketStateMachine.InvokeOnOpen(webSocketClient);
+
+                while (webSocketClient.IsConnected)
                 {
-                    rawMessageBuffer = ArrayPool<byte>.Shared.Rent(MAX_BUFFER);
-                    int totalBytesReceived = 0;
-                    bool endOfMessage = false;
-
-                    while (!endOfMessage && webSocketClient.IsConnected)
+                    byte[]? rawMessageBuffer = null;
+                    try
                     {
-                        var receiveResult = await webSocketClient.ReadMessageAsync(rawMessageBuffer.AsMemory(totalBytesReceived, MAX_BUFFER - totalBytesReceived));
-                        totalBytesReceived += receiveResult.Count;
-                        endOfMessage = receiveResult.EndOfMessage;
+                        rawMessageBuffer = ArrayPool<byte>.Shared.Rent(MAX_BUFFER);
+                        int totalBytesReceived = 0;
+                        bool endOfMessage = false;
 
-                        if (totalBytesReceived >= MAX_BUFFER)
+                        while (!endOfMessage && webSocketClient.IsConnected)
                         {
-                            _logger.Warning("Message exceeds maximum buffer size and may be truncated.");
-                            break;
+                            var receiveResult = await webSocketClient.ReadMessageAsync(rawMessageBuffer.AsMemory(totalBytesReceived, MAX_BUFFER - totalBytesReceived));
+                            totalBytesReceived += receiveResult.Count;
+                            endOfMessage = receiveResult.EndOfMessage;
+
+                            if (totalBytesReceived >= MAX_BUFFER)
+                            {
+                                _logger.Warning("Message exceeds maximum buffer size and may be truncated.");
+                                break;
+                            }
+                        }
+
+                        if (totalBytesReceived > 0)
+                        {
+                            byte[] message = rawMessageBuffer[..totalBytesReceived];
+                            webSocketStateMachine.InvokeOnMessage(webSocketClient, message);
                         }
                     }
-
-                    if (totalBytesReceived > 0)
+                    catch (Exception ex)
                     {
-                        byte[] message = rawMessageBuffer[..totalBytesReceived];
-                        webSocketStateMachine.InvokeOnMessage(webSocketClient, message);
+                        _logger.Error("Failed to invoke state / read buffer: {Message}", ex.Message);
+                    }
+                    finally
+                    {
+                        if (rawMessageBuffer != null) ArrayPool<byte>.Shared.Return(rawMessageBuffer);
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.Error("Failed to invoke state / read buffer: {Message}", ex.Message);
-                }
-                finally
-                {
-                    if (rawMessageBuffer != null) ArrayPool<byte>.Shared.Return(rawMessageBuffer);
-                }
-            }
 
-            webSocketStateMachine.InvokeOnClose(webSocketClient);
+                webSocketStateMachine.InvokeOnClose(webSocketClient);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error while handling socket: {Message}", ex.Message);
+            }
         }
 
 
