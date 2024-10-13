@@ -188,7 +188,6 @@ namespace Astra.Hosting.WebSockets
             webSocketStateMachine.InvokeOnClose(webSocketClient);
         }
 
-
         public void Stop()
         {
             if (!_initialized)

@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using Serilog.Enrichers.CallerInfo;
 using Serilog.Events;
+
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -33,8 +34,8 @@ namespace Astra.Hosting
                 .Enrich.WithProperty("Bucket", name, false)
                 .WriteTo.Console(outputTemplate: CONSOLE_OUTPUT_TEMPLATE)
                 .WriteTo.File("logs/log-.txt",
-                              rollingInterval: RollingInterval.Day,
-                              outputTemplate: FILE_OUTPUT_TEMPLATE)
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: FILE_OUTPUT_TEMPLATE)
                 .CreateLogger();
         }
 
