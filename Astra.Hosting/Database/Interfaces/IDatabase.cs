@@ -9,9 +9,10 @@ namespace Astra.Hosting.Database.Interfaces
 {
     public interface IDatabase
     {
+        IDatabase DropCollection<T>() where T : AstraDbObject;
         ILiteCollection<T>? GetCollection<T>(
             bool createIfNotExisting = true
-        ) where T : IDbObject;
+        ) where T : AstraDbObject;
         Guid GetGuid();
 
         SimpleDatabaseDescriptor Descriptor { get; }

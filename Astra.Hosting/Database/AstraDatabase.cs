@@ -41,7 +41,7 @@ namespace Astra.Hosting.Database
             );
         }
 
-        public IDatabase DropCollection<T>() where T : IDbObject
+        public IDatabase DropCollection<T>() where T : AstraDbObject
         {
             var collectionName = CreateCollectionName<T>();
             if (!_bytedata.CollectionMetadata.Any(x => x.CollectionName == collectionName))
@@ -57,7 +57,7 @@ namespace Astra.Hosting.Database
             return this;
         }
 
-        public ILiteCollection<T>? GetCollection<T>(bool createIfNotExisting = true) where T : IDbObject
+        public ILiteCollection<T>? GetCollection<T>(bool createIfNotExisting = true) where T : AstraDbObject
         {
             var collectionName = CreateCollectionName<T>();
             if (_bytedata.CollectionMetadata.Any(x => x.CollectionName == collectionName))

@@ -8,5 +8,6 @@ namespace Astra.Hosting.Database.Interfaces
 {
     public interface IDbObject
     {
+        string ObjectId { get; }
     }
 }
