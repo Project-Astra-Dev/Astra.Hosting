@@ -195,7 +195,6 @@ namespace Astra.Hosting.WebSockets
             }
         }
 
-
         public void Stop()
         {
             if (!_initialized)

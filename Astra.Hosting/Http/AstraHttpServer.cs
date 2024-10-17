@@ -1,4 +1,5 @@
-﻿using Astra.Hosting.Http.Actions;
+﻿using Astra.Hosting.Application;
+using Astra.Hosting.Http.Actions;
 using Astra.Hosting.Http.Attributes;
 using Astra.Hosting.Http.Binding;
 using Astra.Hosting.Http.Controllers.Interfaces;
@@ -134,6 +135,11 @@ namespace Astra.Hosting.Http
                         return Results.ExpectationFailed(string.Format("The processor '{0}' rejected your request.", processor.GetType().GetSafeName()));
 
                 var args = await BindableExtensions.BindParameters(endpoint.MethodInfo, context);
+                if (HostApplication.Instance != null)
+                {
+                    args = HostApplication.Instance.PopulateArguments(endpoint.MethodInfo, args);
+                }
+
                 if (IsDynamicRoute(endpoint.RouteUri))
                 {
                     var routeParams = ExtractRouteParameters(endpoint.RouteUri, context.Request.Uri);
@@ -157,7 +163,6 @@ namespace Astra.Hosting.Http
 
                 if (result is IHttpActionResult actionResult && actionResult != null)
                     return actionResult;
-
                 return Results.NoContent();
             }
             catch (Exception ex)
