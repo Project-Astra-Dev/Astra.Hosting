@@ -1,7 +1,9 @@
 ﻿using Astra.Hosting.Http.Actions;
 using Astra.Hosting.Http.Attributes;
 using Astra.Hosting.Http.Binding;
+using Astra.Hosting.Http.Controllers.Interfaces;
 using Astra.Hosting.Http.Interfaces;
+using Astra.Hosting.Http.Preprocessors;
 using Astra.Hosting.SDK;
 using Serilog;
 using Serilog.Core;
@@ -23,7 +25,7 @@ namespace Astra.Hosting.Http
 
         private IHttpContext _httpContext;
         private IHttpSessionProcessor? _sessionProcessor = null!;
-
+        private readonly List<IHttpRequestPreprocessor> _preprocessors;
         private readonly List<AstraHttpEndpoint> _endpoints;
         private Task _listenTask = null!;
 
@@ -36,6 +38,8 @@ namespace Astra.Hosting.Http
 
             Hostname = hostname;
             Port = port;
+
+            _preprocessors = new List<IHttpRequestPreprocessor>();
             _endpoints = new List<AstraHttpEndpoint>();
 
             _httpListener = new HttpListener();
@@ -79,14 +83,27 @@ namespace Astra.Hosting.Http
                     if (_sessionProcessor != null)
                         await _sessionProcessor.TryValidateSession(context);
 
-                    IHttpActionResult actionResult;
-                    using (var scopedReference = ScopedReference<IHttpContext>.New(ref _httpContext))
+                    bool continueWithRequest = true;
+                    foreach (var preprocessor in _preprocessors)
                     {
-                        scopedReference.SetValue(context);
-                        actionResult = await ProcessRequest(context);
+                        var result = await preprocessor.TryPreprocessRequest(context.Request, context.Response);
+                        continueWithRequest = !result.result.HasFlag(HttpPreprocessorResult.STOP_AFTER);
+
+                        if (!continueWithRequest)
+                            context.Response.ApplyToHttpListenerResponse(result.actionResult);
                     }
 
-                    context.Response.ApplyToHttpListenerResponse(actionResult);
+                    if (continueWithRequest)
+                    {
+                        IHttpActionResult actionResult;
+                        using (var scopedReference = ScopedReference<IHttpContext>.New(ref _httpContext))
+                        {
+                            scopedReference.SetValue(context);
+                            actionResult = await ProcessRequest(context);
+                        }
+
+                        context.Response.ApplyToHttpListenerResponse(actionResult);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -129,7 +146,9 @@ namespace Astra.Hosting.Http
                     }
                 }
 
-                var result = (Task<IHttpActionResult>)endpoint.MethodInfo.Invoke(endpoint.ControllerInstance ?? (object)this, args)!;
+                var result = (Task<IHttpActionResult>)endpoint.MethodInfo.Invoke(
+                    endpoint.ControllerInstance ?? endpoint.PreprocessorInstance ?? (object)this, 
+                    args)!;
                 if (result is Task<IHttpActionResult> resultTask && resultTask != null)
                 {
                     await resultTask;
@@ -145,7 +164,7 @@ namespace Astra.Hosting.Http
             {
                 return Results.HtmlDocument(
                     HttpStatusCode.InternalServerError,
-                    HtmlDocumentCache.InternalServerErrorDocumentString.Replace("{0}", string.Format("Error while processing {0}<br><br>{1}", endpoint.EndpointName, ex.Message))
+                    HtmlDocumentCache.InternalServerErrorDocumentString.Replace("{0}", string.Format("Error while processing {0}<br><br>{1}", endpoint.EndpointName, ex.ToString()))
                     );
             }
         }
@@ -203,6 +222,33 @@ namespace Astra.Hosting.Http
                 _logger.Information("Stopped HTTP server");
             }
             else _logger.Warning("Cannot stop HTTP server when it is not listening!");
+        }
+
+        public void AddPreprocessor<TProcessor>(params object[] arguments) where TProcessor : IHttpRequestPreprocessor
+        {
+            if (!_preprocessors.Any(x => x.GetType() == typeof(TProcessor)))
+                _preprocessors.Add((TProcessor)Activator.CreateInstance(typeof(TProcessor), arguments)!);
+        }
+
+        public void RemovePreprocessor<TProcessor>() where TProcessor : IHttpRequestPreprocessor
+        {
+            _preprocessors.RemoveAll(x => x.GetType() == typeof(TProcessor));
+        }
+
+        public IHttpEndpoint AddEndpoint(HttpMethod httpMethod, string endpoint, Delegate method, IHttpController? controllerInstance = null, IHttpRequestPreprocessor? preprocessorInstance = null)
+        {
+            var endpointInst = new AstraHttpEndpoint
+            {
+                Method = httpMethod,
+                EndpointName = method.Method.Name,
+                RouteUri = endpoint,
+                MethodInfo = method.Method,
+                ControllerInstance = controllerInstance,
+                PreprocessorInstance = preprocessorInstance
+            };
+
+            _endpoints.Add(endpointInst);
+            return endpointInst;
         }
 
         public IHttpRequest Request => _httpContext.Request;

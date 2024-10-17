@@ -65,6 +65,14 @@ namespace Astra.Hosting.Http.Binding
                 {
                     args[i] = context;
                 }
+                else if (param.ParameterType == typeof(IHttpRequest))
+                {
+                    args[i] = context.Request;
+                }
+                else if (param.ParameterType == typeof(IHttpResponse))
+                {
+                    args[i] = context.Response;
+                }
             }
             return args;
         }

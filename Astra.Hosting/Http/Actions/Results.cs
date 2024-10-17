@@ -3,6 +3,20 @@ using System.Net;
 
 namespace Astra.Hosting.Http.Actions
 {
+    public sealed class ConfigurableActionResult : AstraHttpActionResult<object>
+    {
+        private readonly HttpStatusCode _statusCode;
+        private readonly string _contentType;
+        public ConfigurableActionResult(HttpStatusCode statusCode, string contentType, object content = null) : base(content)
+        {
+            _statusCode = statusCode;
+            _contentType = contentType;
+        }
+
+        public override HttpStatusCode StatusCode => _statusCode;
+        public override string ContentType => _contentType;
+    }
+
     public static class Results
     {
         public static IHttpActionResult Ok(object content = null) => new HttpOkActionResult(content);
@@ -43,5 +57,8 @@ namespace Astra.Hosting.Http.Actions
         public static IHttpActionResult HttpVersionNotSupported(object content = null) => new HttpHttpVersionNotSupportedActionResult(content);
 
         public static IHttpActionResult HtmlDocument(HttpStatusCode statusCode, string htmlContent) => new HtmlDocumentActionResult(statusCode, htmlContent);
+
+        public static IHttpActionResult Configurable(HttpStatusCode statusCode, string contentType, object content = null) 
+            => new ConfigurableActionResult(statusCode, contentType, content);
     }
 }

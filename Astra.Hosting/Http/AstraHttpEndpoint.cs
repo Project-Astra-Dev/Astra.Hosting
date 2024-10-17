@@ -1,5 +1,6 @@
 ﻿using Astra.Hosting.Http.Controllers.Interfaces;
 using Astra.Hosting.Http.Interfaces;
+using Astra.Hosting.Http.Preprocessors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +13,12 @@ namespace Astra.Hosting.Http
     public sealed class AstraHttpEndpoint : IHttpEndpoint
     {
         public HttpMethod Method { get; internal set; } = HttpMethod.Get;
-        public string EndpointName { get; internal set; } = "Unknown";
+        public string EndpointName { get; set; } = "Unknown";
         public string RouteUri { get; internal set; } = "/";
-        public IReadOnlyList<IHttpEndpointProcessor> Processors { get; internal set; } = new List<IHttpEndpointProcessor>();
+        public IReadOnlyList<IHttpEndpointProcessor> Processors { get; set; } = new List<IHttpEndpointProcessor>();
         public MethodInfo MethodInfo { get; internal set; } = null!;
         public IHttpController? ControllerInstance { get; internal set; } = null;
+        public IHttpRequestPreprocessor? PreprocessorInstance { get; set; } = null;
 
         public async Task<bool> Validate(IHttpContext httpContext)
         {
