@@ -10,20 +10,24 @@ namespace Astra.Hosting
 {
     public static class ModuleInitialization
     {
+        private static Func<LoggerConfiguration, LoggerConfiguration>? _loggerConfigurationPreprocessor;
+
         const string CONSOLE_OUTPUT_TEMPLATE =
             "[{Timestamp:HH:mm:ss}] [{Bucket} - {ProcessId}/{ThreadId}] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
         const string FILE_OUTPUT_TEMPLATE =
             "[{Timestamp:MM/dd/yy HH:mm:ss}] [{Bucket} - {ProcessId}/{ThreadId}] [{SourceFile}({Method}:{LineNumber})] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
 
-        public static void Initialize()
+        public static void Initialize([Optional] Func<LoggerConfiguration, LoggerConfiguration>? loggerConfigurationPreprocessor)
         {
+            _loggerConfigurationPreprocessor = loggerConfigurationPreprocessor;
+
             TryRestartWithElevatedPrivileges();
             Log.Logger = InitializeLogger("Main");
         }
 
         internal static ILogger InitializeLogger(string name)
         {
-            return new LoggerConfiguration()
+            var loggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
@@ -35,8 +39,11 @@ namespace Astra.Hosting
                 .WriteTo.Console(outputTemplate: CONSOLE_OUTPUT_TEMPLATE)
                 .WriteTo.File("logs/log-.txt",
                     rollingInterval: RollingInterval.Day,
-                    outputTemplate: FILE_OUTPUT_TEMPLATE)
-                .CreateLogger();
+                    outputTemplate: FILE_OUTPUT_TEMPLATE);
+
+            if (_loggerConfigurationPreprocessor != null)
+                loggerConfiguration = _loggerConfigurationPreprocessor(loggerConfiguration);
+            return loggerConfiguration.CreateLogger();
         }
 
         public static bool IsElevated()
