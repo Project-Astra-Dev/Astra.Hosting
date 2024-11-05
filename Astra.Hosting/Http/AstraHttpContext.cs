@@ -34,6 +34,6 @@ namespace Astra.Hosting.Http
 
         public IHttpRequest Request { get; internal set; } = null!;
         public IHttpResponse Response { get; internal set; } = null!;
-        public IHttpSession Session { get; internal set; } = null!;
+        public IHttpSession Session { get; set; } = null!;
     }
 }

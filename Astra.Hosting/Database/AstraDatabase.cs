@@ -4,6 +4,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace Astra.Hosting.Database
             _descriptor = descriptor;
             _liteDatabase = new LiteDatabase(new ConnectionString(_descriptor.path)
             {
-                Password = _descriptor.password,
+                Password = string.IsNullOrEmpty(_descriptor.password) ? null : _descriptor.password,
                 Connection = ConnectionType.Shared
             });
             _bytedata = new AstraDatabaseBytedata(this, _descriptor);

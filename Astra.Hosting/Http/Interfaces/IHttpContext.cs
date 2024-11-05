@@ -10,6 +10,6 @@ namespace Astra.Hosting.Http.Interfaces
     {
         IHttpRequest Request { get; }
         IHttpResponse Response { get; }
-        IHttpSession Session { get; }
+        IHttpSession Session { get; set; }
     }
 }

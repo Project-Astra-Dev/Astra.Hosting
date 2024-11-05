@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,21 +20,36 @@ namespace Astra.Hosting.Http.Binding
         {
             try
             {
+                if (type.IsEnum)
+                {
+                    var intValue = int.Parse(value);
+                    
+                    if (!Enum.IsDefined(type, intValue))
+                        throw new ArgumentException($"The value '{value}' is not defined in enum {type.Name}.");
+                    return Enum.Parse(type, value);
+                }
+        
                 var typeConverter = TypeDescriptor.GetConverter(type);
                 if (typeConverter == null)
                 {
-                    _logger.Error("The TypeConverter yielded was null. Cannot convert.");
+                    _logger.Error("The TypeConverter yielded was null for type {Type}. Cannot convert.", type);
                     return null!;
                 }
 
-                return typeConverter.ConvertFromString(value) ?? string.Empty;
+                return typeConverter.ConvertFromString(value);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.Error("Failed to convert '{Value}' to {Type}: {Message}", value, type, ex.Message);
+                return null!;
             }
             catch (Exception ex)
             {
-                _logger.Error("Failed to ConvertValueStringToType: {Message}", ex.Message);
+                _logger.Error("An unexpected error occurred in ConvertValueStringToType: {Message}", ex.Message);
                 return null!;
             }
         }
+
 
         //
         // if method parameters contain FromFormAttribute, FromBodyAttribute, FromHeaderAttribute, or FromQueryAttribute
@@ -102,7 +118,8 @@ namespace Astra.Hosting.Http.Binding
 
             foreach (var prop in properties)
             {
-                if (jsonBody.TryGetValue(prop.Name, out var value))
+                var dataMemberAttr = prop.GetCustomAttribute<DataMemberAttribute?>();
+                if (jsonBody.TryGetValue(dataMemberAttr?.Name ?? prop.Name, out var value))
                 {
                     var convertedValue = ConvertValueStringToType(prop.PropertyType, value.ToString());
                     prop.SetValue(instance, convertedValue);
@@ -141,11 +158,11 @@ namespace Astra.Hosting.Http.Binding
         private static async Task<object> BindComplexTypeFromForm(Type type, IHttpContext context)
         {
             var instance = Activator.CreateInstance(type);
-            var properties = type.GetProperties().Where(p => p.GetCustomAttribute<FromFormAttribute>() != null);
+            var properties = type.GetProperties().Where(p => p.GetCustomAttribute<DataMemberAttribute>() != null);
 
             foreach (var prop in properties)
             {
-                var attr = prop.GetCustomAttribute<FromFormAttribute>();
+                var attr = prop.GetCustomAttribute<DataMemberAttribute>();
                 if (context.Request.FormBody.TryGetValue(attr.Name ?? prop.Name!, out var formValue))
                 {
                     var convertedValue = ConvertValueStringToType(prop.PropertyType, formValue);

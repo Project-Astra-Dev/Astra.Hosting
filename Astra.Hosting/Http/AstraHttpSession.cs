@@ -1,6 +1,7 @@
 ﻿using Astra.Hosting.Http.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,6 +52,15 @@ namespace Astra.Hosting.Http
         {
             _claims[key] = value;
         }
+
+        public T GetClaim<T>(string key)
+        {
+            if (!_claims.ContainsKey(key))
+                return default!;
+            var typeConverter = TypeDescriptor.GetConverter(typeof(T));
+            return (T?)typeConverter.ConvertFromInvariantString(_claims[key]) ?? default!;
+        }
+        
         public void RemoveClaim(string key) => _claims.Remove(key);
 
         public void Extend(TimeSpan duration)

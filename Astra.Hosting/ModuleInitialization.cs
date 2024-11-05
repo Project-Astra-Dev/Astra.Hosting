@@ -25,7 +25,7 @@ namespace Astra.Hosting
             Log.Logger = InitializeLogger("Main");
         }
 
-        internal static ILogger InitializeLogger(string name)
+        public static ILogger InitializeLogger(string name)
         {
             var loggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Debug()

@@ -75,7 +75,7 @@ namespace Astra.Hosting.Http
             while (_httpListener.IsListening)
             {
                 var rawHttpContext = await _httpListener.GetContextAsync();
-                var context = AstraHttpContext.New(rawHttpContext);
+                var context = _httpContext = AstraHttpContext.New(rawHttpContext);
 
                 try
                 {

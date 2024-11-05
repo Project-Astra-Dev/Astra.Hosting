@@ -19,6 +19,7 @@ namespace Astra.Hosting.Http.Interfaces
         void RemoveScope(string scope);
 
         void AddClaim(string key, string value);
+        T GetClaim<T>(string key);
         void RemoveClaim(string key);
 
         void Extend(TimeSpan duration);
