@@ -106,7 +106,8 @@ namespace Astra.Hosting.WebSockets
                         var result = route.MethodInfo.Invoke(this, new object[0]);
                         if (result == null || result is not IWebSocketStateMachine)
                         {
-                            _logger.Error("The method '{MethodName}' did not return a '{TypeName}'.", route.EndpointName, nameof(IWebSocketStateMachine));
+                            _logger.Error("The method '{MethodName}' did not return a '{TypeName}'.",
+                                route.EndpointName, nameof(IWebSocketStateMachine));
                             rawHttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
                             rawHttpContext.Response.Close();
                             return;
@@ -117,15 +118,22 @@ namespace Astra.Hosting.WebSockets
                         {
                             if (!await processor.Validate(webSocketClient))
                             {
-                                _logger.Error("The processor '{ProcessorName}' did not validate the request.", route.EndpointName);
+                                _logger.Error("The processor '{ProcessorName}' did not validate the request.",
+                                    route.EndpointName);
                                 rawHttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                                 rawHttpContext.Response.Close();
                                 return;
                             }
                         }
 
-                        _ = Task.Factory.StartNew(async () => await SocketImpl(webSocketClient, (AstraWebSocketStateMachine)result),
+                        _ = Task.Factory.StartNew(
+                            async () => await SocketImpl(webSocketClient, (AstraWebSocketStateMachine)result),
                             TaskCreationOptions.LongRunning);
+                    }
+                    else
+                    {
+                        rawHttpContext.Response.StatusCode = 403;
+                        rawHttpContext.Response.Close();
                     }
                 }
                 catch (Exception ex)
