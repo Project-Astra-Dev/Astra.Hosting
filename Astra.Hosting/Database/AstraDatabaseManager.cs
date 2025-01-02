@@ -33,7 +33,7 @@ namespace Astra.Hosting.Database
             _descriptors = descriptors;
             _cachedDatabases = new List<IDatabase>();
         }
-
+        
         public IDatabase? GetDatabase([Optional] string name, [Optional] int id)
         {
             if (string.IsNullOrEmpty(name) && id == 0)
