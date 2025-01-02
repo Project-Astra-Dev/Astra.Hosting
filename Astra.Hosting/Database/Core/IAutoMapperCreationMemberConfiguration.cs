@@ -1,6 +1,8 @@
 // Copyright (c) nexusverypro (github.com/nexusverypro) $2024.
 //     All rights reserved.
 
+using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Astra.Hosting.Database.Interfaces;

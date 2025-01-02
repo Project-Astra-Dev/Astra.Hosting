@@ -1,3 +1,5 @@
+using System;
+
 namespace Astra.Hosting.Database.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]

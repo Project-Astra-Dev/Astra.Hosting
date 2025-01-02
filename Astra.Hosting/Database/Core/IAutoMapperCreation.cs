@@ -1,12 +1,18 @@
 // Copyright (c) nexusverypro (github.com/nexusverypro) $2024.
 //     All rights reserved.
 
+using System;
 using System.Linq.Expressions;
 using Astra.Hosting.Database.Interfaces;
 
 namespace Astra.Hosting.Database.Core;
 
-public interface IAutoMapperCreation<TEntity, TModel>
+public interface IAutoMapperCreation
+{
+    IAutoMapper GetAutoMapperNonGeneric();
+}
+
+public interface IAutoMapperCreation<TEntity, TModel> : IAutoMapperCreation
     where TEntity : class, IDbObject
     where TModel : class
 {
@@ -17,4 +23,6 @@ public interface IAutoMapperCreation<TEntity, TModel>
             
     IAutoMapperCreation<TEntity, TModel> BeforeMap(Action<TEntity, TModel> action);
     IAutoMapperCreation<TEntity, TModel> AfterMap(Action<TEntity, TModel> action);
+    
+    IAutoMapper<TEntity, TModel> GetAutoMapper();
 }

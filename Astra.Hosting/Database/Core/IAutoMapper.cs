@@ -7,7 +7,15 @@ using Astra.Hosting.Database.Interfaces;
 
 namespace Astra.Hosting.Database.Core
 {
-    public interface IAutoMapper<TEntity, TModel>
+    public interface IAutoMapper
+    {
+        object Map(Type entityType, object entityObject);
+        IEnumerable<object> MapCollection(Type entityType, IEnumerable<object> entityObjects);
+        object MapBack(Type modelType, object modelObject);
+        void MapTo(Type entityType, object entityObject, Type modelType, object modelObject);
+    }
+    
+    public interface IAutoMapper<TEntity, TModel> : IAutoMapper
         where TEntity : class, IDbObject
         where TModel : class
     {

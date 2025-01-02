@@ -1,6 +1,9 @@
 // Copyright (c) nexusverypro (github.com/nexusverypro) $2024.
 //     All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Astra.Hosting.Database.Interfaces;
@@ -73,4 +76,9 @@ public sealed class StandardAutoMapperCreation<TEntity, TModel> : IAutoMapperCre
         _afterMapAction = action;
         return this;
     }
+
+    public IAutoMapper GetAutoMapperNonGeneric() => AutoMapper;
+    public IAutoMapper<TEntity, TModel> GetAutoMapper() => AutoMapper;
+    
+    public IAutoMapper<TEntity, TModel> AutoMapper => null;
 }
