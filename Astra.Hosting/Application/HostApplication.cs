@@ -35,7 +35,10 @@ namespace Astra.Hosting.Application
 
         public IHostApplication AddServer<TInterface, TServer>() where TServer : class, IStartStopObject
         {
-            _serviceHost.AddDependencies(options => options.AddSingleton<TServer, TInterface>());
+            _serviceHost.AddDependencies(options => options.AddSingleton<TServer, TInterface>(factory =>
+            {
+                
+            }));
             return this;
         }
 
