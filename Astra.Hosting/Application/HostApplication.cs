@@ -63,6 +63,9 @@ namespace Astra.Hosting.Application
             }
             return args;
         }
+        
+        public TInterface Get<TInterface>() where TInterface : notnull
+            => _container.Resolve<TInterface>();
 
         public async Task RunAsync()
         {

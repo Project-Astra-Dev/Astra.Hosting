@@ -11,6 +11,7 @@ namespace Astra.Hosting.Application
             where TServer : class, IStartStopObject
             where TInterface : notnull;
         object[] PopulateArguments(MethodInfo methodInfo, object[] args);
+        TInterface Get<TInterface>() where TInterface : notnull;
 
         Task RunAsync();
     }
