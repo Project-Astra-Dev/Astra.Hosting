@@ -1,10 +1,10 @@
-﻿using Astra.DependencyInjection;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Autofac;
 
 namespace Astra.Hosting.Application
 {
@@ -13,32 +13,37 @@ namespace Astra.Hosting.Application
         public static HostApplication Instance { get; private set; }
 
         private readonly string _name;
-        private readonly IServiceHost _serviceHost;
+        private readonly ContainerBuilder _containerBuilder;
+        private readonly List<Type> _allServerTypes = new List<Type>();
+        private readonly List<IStartStopObject> _allServerObjects = new List<IStartStopObject>();
 
-        private ServiceProvider _serviceProvider = null!;
-        internal static ServiceProvider ServiceProvider => Instance._serviceProvider;
+        private IContainer _container = null!;
+        internal static IContainer Container => Instance._container;
 
         private HostApplication(string name)
         {
             Instance = this;
             _name = name;
-            _serviceHost = ServiceHost.Create(name);
+            _containerBuilder = new ContainerBuilder();
         }
         public static IHostApplication New(string name)
             => new HostApplication(name);
 
-        public IHostApplication ConfigureServices(Action<IServiceBuilder> onConfigureServicesAction)
+        public IHostApplication ConfigureServices(Action<ContainerBuilder> onConfigureServicesAction)
         {
-            _serviceHost.AddDependencies(onConfigureServicesAction);
+            onConfigureServicesAction.Invoke(_containerBuilder);
             return this;
         }
 
-        public IHostApplication AddServer<TInterface, TServer>() where TServer : class, IStartStopObject
+        public IHostApplication AddServer<TInterface, TServer>() 
+            where TServer : class, IStartStopObject 
+            where TInterface : notnull
         {
-            _serviceHost.AddDependencies(options => options.AddSingleton<TServer, TInterface>(factory =>
-            {
-                
-            }));
+            _containerBuilder.RegisterType<TServer>()
+                .As<TInterface>()
+                .SingleInstance();
+    
+            _allServerTypes.Add(typeof(TInterface));
             return this;
         }
 
@@ -50,21 +55,20 @@ namespace Astra.Hosting.Application
             if (methodParameters.Length < args.Length) 
                 return args;
 
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
                 var parameter = methodParameters[i];
-                var service = _serviceProvider.GetService(parameter.ParameterType);
-
-                if (service != null)
-                    args[i] = service;
+                var service = _container.ResolveOptional(parameter.ParameterType);
+                if (service != null) args[i] = service;
             }
-
             return args;
         }
 
         public async Task RunAsync()
         {
-            _serviceProvider = _serviceHost.GetServiceProvider();
+            _container = _containerBuilder.Build();
+            foreach (var serverType in _allServerTypes)
+                _allServerObjects.Add((IStartStopObject)_container.Resolve(serverType));
             await Task.Delay(-1);
         }
     }
