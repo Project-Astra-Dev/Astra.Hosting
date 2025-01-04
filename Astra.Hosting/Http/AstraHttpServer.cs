@@ -22,6 +22,8 @@ namespace Astra.Hosting.Http
 {
     public abstract partial class AstraHttpServer : IHttpServer, IHttpEndpointParameters, IStartStopObject
     {
+        private static readonly object _logLock = new object();
+        
         private bool _initialized;
         private HttpListener _httpListener;
 
@@ -80,7 +82,26 @@ namespace Astra.Hosting.Http
 
                 try
                 {
-                    _logger.Information("{IpAddress} {HttpMethod} {Uri}", context.Request.Remote, context.Request.Method, rawHttpContext.Request.Url!.PathAndQuery);
+                    lock (_logLock)
+                    {
+                        _logger.Information("{IpAddress} {HttpMethod} {Uri}", context.Request.Remote, context.Request.Method, rawHttpContext.Request.Url!.PathAndQuery);
+                        if ((context.Request.Method == HttpMethod.Post || context.Request.Method == HttpMethod.Put) && context.Request.Body.Length > 0)
+                        {
+                            _logger.Information("Content-Type: {ContentType}", context.Request.Headers["Content-Type"]);
+                            if (context.Request.Headers["Content-Type"] == "application/json")
+                            {
+                                _logger.Information("\tJson Body:", context.Request.JsonBody);
+                                foreach (var kvp in context.Request.JsonBody)
+                                    _logger.Information("\t\t{Key}: {Value}", kvp.Key, kvp.Value);
+                            }
+                            else if (context.Request.Headers["Content-Type"] == "application/x-www-form-urlencoded")
+                            {
+                                _logger.Information("\tForm Body:", context.Request.FormBody);
+                                foreach (var kvp in context.Request.FormBody)
+                                    _logger.Information("\t\t{Key}: {Value}", kvp.Key, kvp.Value);
+                            }
+                        }
+                    }
 
                     if (_sessionProcessor != null)
                         await _sessionProcessor.TryValidateSession(context);
