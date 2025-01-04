@@ -6,6 +6,7 @@ namespace Astra.Hosting.Application
     public interface IHostApplication
     {
         IHostApplication ConfigureServices(Action<ContainerBuilder> onConfigureServicesAction);
+        IHostApplication OnPrepare(Action<IContainer> onPrepareAction);
 
         IHostApplication AddServer<TInterface, TServer>()
             where TServer : class, IStartStopObject

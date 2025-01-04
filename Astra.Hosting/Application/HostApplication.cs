@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Core;
 
 namespace Astra.Hosting.Application
 {
@@ -16,6 +17,7 @@ namespace Astra.Hosting.Application
         private readonly ContainerBuilder _containerBuilder;
         private readonly List<Type> _allServerTypes = new List<Type>();
         private readonly List<IStartStopObject> _allServerObjects = new List<IStartStopObject>();
+        private Action<IContainer> _prepareAction;
 
         private IContainer _container = null!;
         internal static IContainer Container => Instance._container;
@@ -32,6 +34,12 @@ namespace Astra.Hosting.Application
         public IHostApplication ConfigureServices(Action<ContainerBuilder> onConfigureServicesAction)
         {
             onConfigureServicesAction.Invoke(_containerBuilder);
+            return this;
+        }
+
+        public IHostApplication OnPrepare(Action<IContainer> onPrepareAction)
+        {
+            _prepareAction = onPrepareAction;
             return this;
         }
 
@@ -69,7 +77,11 @@ namespace Astra.Hosting.Application
 
         public async Task RunAsync()
         {
+            if (_container != null) 
+                throw new InvalidOperationException("Container has already been built by RunAsync().");
+            
             _container = _containerBuilder.Build();
+            _prepareAction?.Invoke(_container);
             foreach (var serverType in _allServerTypes)
                 _allServerObjects.Add((IStartStopObject)_container.Resolve(serverType));
             await Task.Delay(-1);
