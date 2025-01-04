@@ -28,7 +28,11 @@ namespace Astra.Hosting
         public static ILogger InitializeLogger(string name)
         {
             var loggerConfiguration = new LoggerConfiguration()
+#if DEBUG
                 .MinimumLevel.Debug()
+#elif !DEBUG
+                .MinimumLevel.Information()
+#endif
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
                 .Enrich.WithCallerInfo(
