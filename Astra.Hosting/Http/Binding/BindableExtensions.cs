@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using Astra.Hosting.Application;
 
 namespace Astra.Hosting.Http.Binding
 {
@@ -89,7 +90,15 @@ namespace Astra.Hosting.Http.Binding
                 {
                     args[i] = context.Response;
                 }
+                else
+                {
+                    var obj = HostApplication.Instance.Get(param.ParameterType);
+                    if (obj != null) args[i] = obj;
+                }
             }
+            
+            for (int i = 0; i < args.Length; i++)
+                _logger.Warning("Arg ({Index}): {Arg}", i, args[i]);
             return args;
         }
 
@@ -152,6 +161,30 @@ namespace Astra.Hosting.Http.Binding
         private static object BindFromQuery(ParameterInfo param, FromQueryAttribute attr, IHttpContext context)
         {
             var queryValue = context.Request.GetQueryParameter(attr.Name ?? param.Name!);
+            if (queryValue == null)
+                return null;
+
+            if (param.ParameterType.IsArray)
+            {
+                _logger.Warning("Parameter type: {Type}", param.ParameterType);
+                var values = queryValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                _logger.Warning("Array: {@Array}", values);
+                var elementType = param.ParameterType.GetElementType()
+                                  ?? throw new InvalidOperationException("ElementType is null.");
+                _logger.Warning("Element type: {Type}", elementType);
+                
+                var array = (Array?)Activator.CreateInstance(param.ParameterType, values.Length)
+                    ?? throw new InvalidOperationException();
+                _logger.Warning("Array created: {@Array}", array);
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    var value = ConvertValueStringToType(elementType, values[i].Trim());
+                    _logger.Warning("Array item created ({Index}): {Item}", i, value);
+                    array.SetValue(value, i);
+                }
+                return Convert.ChangeType(array, param.ParameterType);
+            }
             return ConvertValueStringToType(param.ParameterType, queryValue);
         }
 

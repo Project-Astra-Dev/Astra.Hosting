@@ -157,11 +157,6 @@ namespace Astra.Hosting.Http
                         return Results.ExpectationFailed(string.Format("The processor '{0}' rejected your request.", processor.GetType().GetSafeName()));
 
                 var args = await BindableExtensions.BindParameters(endpoint.MethodInfo, context);
-                if (HostApplication.Instance != null)
-                {
-                    args = HostApplication.Instance.PopulateArguments(endpoint.MethodInfo, args);
-                }
-
                 if (IsDynamicRoute(endpoint.RouteUri))
                 {
                     var routeParams = ExtractRouteParameters(endpoint.RouteUri, context.Request.Uri);
