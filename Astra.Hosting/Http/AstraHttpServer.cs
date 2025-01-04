@@ -189,6 +189,7 @@ namespace Astra.Hosting.Http
             }
             catch (Exception ex)
             {
+                _logger.Error("Error processing request: {Message}", ex.Message);
                 return Results.HtmlDocument(
                     HttpStatusCode.InternalServerError,
                     HtmlDocumentCache.InternalServerErrorDocumentString.Replace("{0}", string.Format("Error while processing {0}<br><br>{1}", endpoint.EndpointName, ex.ToString()))
