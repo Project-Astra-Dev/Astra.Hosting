@@ -72,8 +72,8 @@ namespace Astra.Hosting.Application
             return args;
         }
         
-        public TInterface Get<TInterface>() where TInterface : notnull => (TInterface)Get(typeof(TInterface));
-        public object Get(Type interfaceType) => _container.Resolve(interfaceType);
+        public TInterface Get<TInterface>() where TInterface : notnull => _container.Resolve<TInterface>();
+        public object Get(Type interfaceType) => _container.ResolveOptional(interfaceType);
 
         public async Task RunAsync()
         {
