@@ -145,7 +145,7 @@ namespace Astra.Hosting.Http
 
         private async Task<IHttpActionResult> ProcessRequest(IHttpContext context)
         {
-            var endpoint = FindMatchingEndpoint(context.Request);
+            var endpoint = FindExactMatchingEndpoint(context.Request) ?? FindDynamicMatchingEndpoint(context.Request);
 
             if (endpoint == null) return Results.NotFound();
             if (endpoint.Method != context.Request.Method) return Results.MethodNotAllowed();
@@ -192,27 +192,51 @@ namespace Astra.Hosting.Http
                 return Results.HtmlDocument(
                     HttpStatusCode.InternalServerError,
                     HtmlDocumentCache.InternalServerErrorDocumentString.Replace("{0}", string.Format("Error while processing {0}<br><br>{1}", endpoint.EndpointName, ex.ToString()))
-                    );
+                );
             }
         }
 
+        private AstraHttpEndpoint? FindExactMatchingEndpoint(IHttpRequest request)
+        {
+            return _endpoints.FirstOrDefault(e => 
+                !IsDynamicRoute(e.RouteUri) && 
+                string.Equals(
+                    NormalizePath(e.RouteUri), 
+                    NormalizePath(request.Uri), 
+                    StringComparison.OrdinalIgnoreCase
+                ));
+        }
+
+        private AstraHttpEndpoint? FindDynamicMatchingEndpoint(IHttpRequest request)
+        {
+            return _endpoints.FirstOrDefault(e => 
+                IsDynamicRoute(e.RouteUri) && 
+                IsMatchingDynamicRoute(e.RouteUri, request.Uri));
+        }
+
+        private string NormalizePath(string path) =>  path.TrimEnd('/').ToLowerInvariant();
+
+        private bool IsMatchingDynamicRoute(string routePattern, string requestPath)
+        {
+            var routeParts = routePattern.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var requestParts = requestPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            if (routeParts.Length != requestParts.Length)
+                return false;
+
+            for (int i = 0; i < routeParts.Length; i++)
+            {
+                if (!routeParts[i].StartsWith("{") && !routeParts[i].EndsWith("}"))
+                {
+                    if (!string.Equals(routeParts[i], requestParts[i], StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool IsDynamicRoute(string routeUri) => routeUri.Contains("{") && routeUri.Contains("}");
-
-        private AstraHttpEndpoint? FindMatchingEndpoint(IHttpRequest request)
-        {
-            return _endpoints.FirstOrDefault(e => IsRouteMatch(e.RouteUri, request.Uri), null);
-        }
-
-        private bool IsRouteMatch(string routePattern, string requestPath)
-        {
-            var pattern = "^" + Regex.Escape(routePattern)
-                .Replace("\\{", "{")
-                .Replace("}", "}")
-                .Replace("{*}", "(.*)")
-                .Replace("{", "(?<")
-                .Replace("}", ">[^/]+)") + "$";
-            return Regex.IsMatch(requestPath, pattern);
-        }
 
         private Dictionary<string, string> ExtractRouteParameters(string routePattern, string requestPath)
         {

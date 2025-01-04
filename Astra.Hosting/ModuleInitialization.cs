@@ -37,7 +37,7 @@ namespace Astra.Hosting
                     filePathDepth: 1)
                 .Enrich.WithProperty("Bucket", name, false)
                 .WriteTo.Console(outputTemplate: CONSOLE_OUTPUT_TEMPLATE)
-                .WriteTo.File("logs/log-.txt",
+                .WriteTo.File("logs/"+ name + "-log-.txt",
                     rollingInterval: RollingInterval.Day,
                     outputTemplate: FILE_OUTPUT_TEMPLATE);
 
