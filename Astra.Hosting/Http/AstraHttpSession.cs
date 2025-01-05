@@ -15,10 +15,10 @@ namespace Astra.Hosting.Http
         private string _sessionId;
         private string _sessionType;
         private DateTime _expiresAt;
-        private List<string>? _scopes;
+        private List<string> _scopes;
         private Dictionary<string, string> _claims;
 
-        private AstraHttpSession(string sessionId, string sessionType, DateTime expiresAt, List<string>? scopes, Dictionary<string, string> claims)
+        private AstraHttpSession(string sessionId, string sessionType, DateTime expiresAt, List<string> scopes, Dictionary<string, string> claims)
         {
             _sessionId = sessionId;
             _sessionType = sessionType;
@@ -27,7 +27,7 @@ namespace Astra.Hosting.Http
             _claims = claims;
         }
 
-        public static IHttpSession New(string sessionId, string sessionType, DateTime expiresAt, List<string>? scopes, Dictionary<string, string> claims)
+        public static IHttpSession New(string sessionId, string sessionType, DateTime expiresAt, List<string> scopes, Dictionary<string, string> claims)
         {
             return new AstraHttpSession(sessionId, sessionType, expiresAt, scopes, claims);
         }
