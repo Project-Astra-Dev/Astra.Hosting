@@ -6,18 +6,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Core;
+using Serilog;
 
 namespace Astra.Hosting.Application
 {
     public sealed class HostApplication : IHostApplication
     {
+        private static readonly ILogger _logger = ModuleInitialization.InitializeLogger("HostApplication");
+        
         public static HostApplication Instance { get; private set; }
 
         private readonly string _name;
         private readonly ContainerBuilder _containerBuilder;
         private readonly List<Type> _allServerTypes = new List<Type>();
         private readonly List<IStartStopObject> _allServerObjects = new List<IStartStopObject>();
-        private Action<IContainer> _prepareAction;
+        private Action<IContainer>? _prepareAction;
 
         private IContainer _container = null!;
         internal static IContainer Container => Instance._container;
@@ -81,6 +84,12 @@ namespace Astra.Hosting.Application
                 throw new InvalidOperationException("Container has already been built by RunAsync().");
             
             _container = _containerBuilder.Build();
+            if (_container == null!)
+            {
+                _logger.Error("The container has not been built yet. This is probably due to a misconfiguration.");
+                return;
+            }
+
             _prepareAction?.Invoke(_container);
             foreach (var serverType in _allServerTypes)
                 _allServerObjects.Add((IStartStopObject)_container.Resolve(serverType));
