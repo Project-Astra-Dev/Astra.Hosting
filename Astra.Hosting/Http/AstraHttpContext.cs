@@ -26,6 +26,7 @@ namespace Astra.Hosting.Http
                 "Default",
                 DateTime.UtcNow.AddMinutes(30),
                 new List<string>(),
+                new List<string>(),
                 new Dictionary<string, string>()
             );
 

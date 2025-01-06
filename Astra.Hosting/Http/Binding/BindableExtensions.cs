@@ -152,6 +152,9 @@ namespace Astra.Hosting.Http.Binding
         private static object BindFromHeader(ParameterInfo param, FromHeaderAttribute attr, IHttpContext context)
         {
             var headerValue = context.Request.GetHeaderValue(attr.Name ?? param.Name!);
+            if (headerValue == null)
+                return null;
+            
             return ConvertValueStringToType(param.ParameterType, headerValue);
         }
 

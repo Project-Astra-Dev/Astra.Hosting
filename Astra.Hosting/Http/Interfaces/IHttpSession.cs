@@ -11,6 +11,7 @@ namespace Astra.Hosting.Http.Interfaces
         string SessionId { get; }
         string SessionType { get; }
         DateTime ExpiresAt { get; }
+        List<string> Roles { get; }
         List<string> Scopes { get; }
         Dictionary<string, string> Claims { get; }
 
