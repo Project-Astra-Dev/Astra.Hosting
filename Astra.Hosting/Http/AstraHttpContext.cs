@@ -32,6 +32,13 @@ namespace Astra.Hosting.Http
 
             return new AstraHttpContext(request, response, session);
         }
+        
+        public static string GetCacheKey(IHttpRequest request)
+        {
+            return string.Join("-", new[] { request.Method.Method, request.Uri }.Concat(
+                request.Queries.Select(q => $"{q.Key}={q.Value}")
+            ));
+        }
 
         public IHttpRequest Request { get; internal set; } = null!;
         public IHttpResponse Response { get; internal set; } = null!;

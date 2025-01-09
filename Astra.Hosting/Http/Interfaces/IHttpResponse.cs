@@ -19,6 +19,7 @@ namespace Astra.Hosting.Http.Interfaces
         string ContentType { get; set; }
         byte[] Content { get; set; }
         Dictionary<string, string> Headers { get; }
+        IHttpActionResult ActionResult { get; }
 
         void SetHeader(string key, string value);
         void RemoveHeader(string key);

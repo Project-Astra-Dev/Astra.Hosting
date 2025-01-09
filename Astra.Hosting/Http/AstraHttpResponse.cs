@@ -12,6 +12,8 @@ namespace Astra.Hosting.Http
     public sealed class AstraHttpResponse : IHttpResponse, IHttpResponseInternal
     {
         private readonly HttpListenerResponse _response;
+        
+        private IHttpActionResult _actionResult;
         private byte[]? _content;
 
         private AstraHttpResponse(HttpListenerResponse response)
@@ -46,6 +48,8 @@ namespace Astra.Hosting.Http
         }
 
         public Dictionary<string, string> Headers { get; }
+        
+        public IHttpActionResult ActionResult => _actionResult;
 
         public void SetHeader(string key, string value)
         {
@@ -109,6 +113,8 @@ namespace Astra.Hosting.Http
         public void ApplyToHttpListenerResponse(IHttpActionResult httpActionResult)
         {
             if (httpActionResult == null) return;
+
+            _actionResult = httpActionResult;
             foreach (var header in Headers)
                 _response.Headers[header.Key] = header.Value;
 

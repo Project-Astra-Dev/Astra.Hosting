@@ -82,6 +82,10 @@ namespace Astra.Hosting.Http.Binding
                 {
                     args[i] = context;
                 }
+                else if (param.ParameterType == typeof(IHttpSession))
+                {
+                    args[i] = context.Session;
+                }
                 else if (param.ParameterType == typeof(IHttpRequest))
                 {
                     args[i] = context.Request;

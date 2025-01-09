@@ -27,6 +27,7 @@ namespace Astra.Hosting.Http.Controllers
         {
         }
 
+        public IHttpContext Context => _httpServer.Context;
         public IHttpRequest Request => _httpServer.Request;
         public IHttpResponse Response => _httpServer.Response;
         public IHttpSession Session => _httpServer.Session;

@@ -10,9 +10,18 @@ namespace Astra.Hosting.Http.Preprocessors
     [Flags]
     public enum HttpPreprocessorResult
     {
+        // Tells the server that the preprocessor executed
+        // successfully.
         OK = 0,
+        // Tells the server to stop processing the request
+        // and return an error message sent by the preprocessor
         FAIL = 1,
-        STOP_AFTER = 2
+        // Tells the server to stop processing the request
+        // and return whatevers been sent by the preprocessor
+        STOP_AFTER = 2,
+        // Tells the server to cache the response in 
+        // HttpCacheManager
+        CACHE = 4,
     }
 
     public struct HttpPreprocessorContainer

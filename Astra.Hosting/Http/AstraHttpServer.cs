@@ -1,4 +1,5 @@
 ﻿using Astra.Hosting.Application;
+using Astra.Hosting.Caching;
 using Astra.Hosting.Http.Actions;
 using Astra.Hosting.Http.Attributes;
 using Astra.Hosting.Http.Binding;
@@ -22,8 +23,6 @@ namespace Astra.Hosting.Http
 {
     public abstract partial class AstraHttpServer : IHttpServer, IHttpEndpointParameters, IStartStopObject
     {
-        private static readonly object _logLock = new object();
-        
         private bool _initialized;
         private HttpListener _httpListener;
 
@@ -82,7 +81,7 @@ namespace Astra.Hosting.Http
 
                 try
                 {
-                    lock (_logLock)
+                    lock (LogContext.logLock)
                     {
                         _logger.Information("{IpAddress} {HttpMethod} {Uri}", context.Request.Remote, context.Request.Method, rawHttpContext.Request.Url!.PathAndQuery);
                         if ((context.Request.Method == HttpMethod.Post || context.Request.Method == HttpMethod.Put) && context.Request.Body.Length > 0)
@@ -110,10 +109,13 @@ namespace Astra.Hosting.Http
                     foreach (var preprocessor in _preprocessors)
                     {
                         var result = await preprocessor.TryPreprocessRequest(context.Request, context.Response);
-                        continueWithRequest = !result.result.HasFlag(HttpPreprocessorResult.STOP_AFTER);
-
-                        if (!continueWithRequest)
-                            context.Response.ApplyToHttpListenerResponse(result.actionResult);
+                        continueWithRequest = (result.result.HasFlag(HttpPreprocessorResult.STOP_AFTER) || result.result == HttpPreprocessorResult.STOP_AFTER) == false;
+                        if (continueWithRequest || context.Response.ActionResult != null)
+                            continue;
+                        
+                        context.Response.ApplyToHttpListenerResponse(result.actionResult);
+                        if (result.result.HasFlag(HttpPreprocessorResult.CACHE))
+                            HttpCacheManager.TryAdd(AstraHttpContext.GetCacheKey(context.Request), context.Response, TimeSpan.FromMinutes(5));
                     }
 
                     if (continueWithRequest)
@@ -130,7 +132,7 @@ namespace Astra.Hosting.Http
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Error processing request: {Message}", ex.Message);
+                    _logger.Error("Error processing request: {Message}", ex);
                     context.Response.ApplyToHttpListenerResponse(
                         Results.HtmlDocument(
                             HttpStatusCode.InternalServerError,
@@ -184,7 +186,7 @@ namespace Astra.Hosting.Http
             }
             catch (Exception ex)
             {
-                _logger.Error("Error processing request: {Message}", ex.Message);
+                _logger.Error("Error processing request: {Message}", ex);
                 return Results.HtmlDocument(
                     HttpStatusCode.InternalServerError,
                     HtmlDocumentCache.InternalServerErrorDocumentString.Replace("{0}", string.Format("Error while processing {0}<br><br>{1}", endpoint.EndpointName, ex.ToString()))
@@ -298,6 +300,7 @@ namespace Astra.Hosting.Http
             return endpointInst;
         }
 
+        public IHttpContext Context => _httpContext;
         public IHttpRequest Request => _httpContext.Request;
         public IHttpResponse Response => _httpContext.Response;
         public IHttpSession Session => _httpContext.Session;
