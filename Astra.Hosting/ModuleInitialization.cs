@@ -35,10 +35,6 @@ namespace Astra.Hosting
 #endif
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
-                .Enrich.WithCallerInfo(
-                    includeFileInfo: true,
-                    assemblyPrefix: "Astra.",
-                    filePathDepth: 1)
                 .Enrich.WithProperty("Bucket", name, false)
                 .WriteTo.Console(outputTemplate: CONSOLE_OUTPUT_TEMPLATE)
                 .WriteTo.File("logs/"+ name + "-log-.txt",
