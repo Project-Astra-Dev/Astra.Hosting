@@ -101,9 +101,18 @@ namespace Astra.Hosting.Http
                             }
                         }
                     }
-
-                    if (_sessionProcessor != null)
-                        await _sessionProcessor.TryValidateSession(context);
+                    
+                    if (_sessionProcessor != null) await _sessionProcessor.TryValidateSession(context);
+                    
+                    // OPTIONS is not implemented, however just return OK if we
+                    // have any CORs attributes from the session processor
+                    if (context.Request.Method == HttpMethod.Options)
+                    {
+                        context.Response.ApplyToHttpListenerResponse(
+                            Results.Ok()
+                        );
+                        continue;
+                    }
 
                     bool continueWithRequest = true;
                     foreach (var preprocessor in _preprocessors)
@@ -150,7 +159,8 @@ namespace Astra.Hosting.Http
             var endpoint = FindExactMatchingEndpoint(context.Request) ?? FindDynamicMatchingEndpoint(context.Request);
 
             if (endpoint == null) return Results.NotFound();
-            if (endpoint.Method != context.Request.Method) return Results.MethodNotAllowed();
+            if (endpoint.Method != context.Request.Method) 
+                return Results.MethodNotAllowed();
 
             try
             {

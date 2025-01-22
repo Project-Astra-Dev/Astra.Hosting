@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Astra.Hosting.Autofac;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -21,6 +22,7 @@ namespace Astra.Hosting.Application
         private readonly List<Type> _allServerTypes = new List<Type>();
         private readonly List<IStartStopObject> _allServerObjects = new List<IStartStopObject>();
         private Action<IContainer>? _prepareAction;
+        private readonly HostConfiguration _configuration;
 
         private IContainer _container = null!;
         internal static IContainer Container => Instance._container;
@@ -28,6 +30,8 @@ namespace Astra.Hosting.Application
         private HostApplication(string name)
         {
             Instance = this;
+            _configuration = HostConfiguration.FromFile("appsettings.json");
+            
             _name = name;
             _containerBuilder = new ContainerBuilder();
         }
@@ -82,6 +86,12 @@ namespace Astra.Hosting.Application
         {
             if (_container != null) 
                 throw new InvalidOperationException("Container has already been built by RunAsync().");
+
+            {
+                _containerBuilder.AddSingletonFactory<IHostConfiguration, HostConfiguration>(
+                    (ctx, parameters) => _configuration                 // Initialize host configuration
+                );
+            }
             
             _container = _containerBuilder.Build();
             if (_container == null!)

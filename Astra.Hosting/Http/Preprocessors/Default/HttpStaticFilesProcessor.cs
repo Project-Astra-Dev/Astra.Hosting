@@ -18,20 +18,20 @@ namespace Astra.Hosting.Http.Preprocessors.Default
         private readonly string _baseFolder;
         private readonly bool _allowExtensionlessLookups;
         private readonly Action<ScopedReference<byte[]>, IHttpRequest, IHttpResponse>? _onPreprocess;
-        private readonly bool _stopAfterImage;
+        private readonly bool _stopAfter;
         private readonly bool _cacheImage;
 
         public HttpStaticFilesProcessor(
             string baseFolder,
             bool allowExtensionlessLookups = false, 
             Action<ScopedReference<byte[]>, IHttpRequest, IHttpResponse>? onPreprocess = null, 
-            bool? stopAfterImage = true,
+            bool? stopAfter = true,
             bool? cacheImage = false)
         {
             _baseFolder = baseFolder;
             _allowExtensionlessLookups = allowExtensionlessLookups;
             _onPreprocess = onPreprocess;
-            _stopAfterImage = stopAfterImage.HasValue && stopAfterImage.Value;
+            _stopAfter = stopAfter.HasValue && stopAfter.Value;
             _cacheImage = cacheImage.HasValue && cacheImage.Value;
         }
 
@@ -101,7 +101,7 @@ namespace Astra.Hosting.Http.Preprocessors.Default
             return new HttpPreprocessorContainer
             {
                 actionResult = Results.Configurable(HttpStatusCode.OK, mimeType, scopedReference.GetValue()),
-                result = _stopAfterImage 
+                result = _stopAfter
                     ? _cacheImage
                         ? HttpPreprocessorResult.OK | HttpPreprocessorResult.CACHE | HttpPreprocessorResult.STOP_AFTER
                         : HttpPreprocessorResult.OK | HttpPreprocessorResult.STOP_AFTER
